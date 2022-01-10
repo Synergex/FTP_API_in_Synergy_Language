@@ -1,0 +1,22 @@
+Had to comment out the lines
+.include sdbl:unfi_functions.inc
+in all the files as this file was not included with the zip file.
+
+Also had to change:
+display(1, %date,' ',%string(%time,"XX:XX:XX"),
+                                    &       ' Getting: ',%atrim(sFileName) + 
+                                    &       ' ' + %string(LongFileList.strMonth) + 
+                                    &       ' ' + %string(LongFileList.strDay) + 
+                                    &       ' ' + %string(LongFileList.strTime) + ' AS ' +
+                                    &       'c:\affiles\data\files\' + 
+                                    &       sFileName(1, %instr(1, %atrim(sFileName), ";") - 1),13,10)
+to:
+display(1, %date,' ',%string(%time,"XX:XX:XX"),
+                                    &       ' Getting: ',%atrim(sFileName) + 
+                                    &       ' ' + LongFileList.strMonth + 
+                                    &       ' ' + LongFileList.strDay + 
+                                    &       ' ' + LongFileList.strTime + ' AS ' +
+                                    &       'c:\affiles\data\files\' + 
+                                    &       sFileName(1, %instr(1, %atrim(sFileName), ";") - 1),13,10)
+                                    
+as the %string argument was already an alpha and was throwing a type mismatch error.

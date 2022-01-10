@@ -1,0 +1,94 @@
+;.include 'sdbl:unfi_functions.inc'
+.include 'ftp.def'
+
+.align
+record iVars
+        iStatus         ,i4
+        iConnection     ,i4
+        iSocket         ,i4
+        hDir            ,i4
+        iCount          ,i4
+
+record  aVars
+        sReturn         ,a80
+        sFileName       ,a80
+
+structure files
+        file            ,a132
+
+.proc
+        open(1, o:c, 'tt:')
+        open(15, o:c, 'tt:')
+
+        iStatus = %ftpOpen(iConnection, 'servername', 21, sreturn)
+        display(1,%date,' ',%string(%time,"XX:XX:XX"),' Connect: ',%atrim(sreturn),13,10)
+
+        if (iStatus < 300)
+          begin
+            iStatus = %ftpLogin(iConnection, 'anonymous', 'guest', sreturn)
+            display(1,%date,' ',%string(%time,"XX:XX:XX"),' Login: ',%atrim(sreturn),13,10)
+
+            if (iStatus < 300)
+              begin
+                iStatus = %ftpchangedirectory(iConnection,'/', sreturn)
+                display(1,%date,' ',%string(%time,"XX:XX:XX"),
+                &       ' Change Directory: ',%atrim(sreturn),13,10)
+
+                if (iStatus < 300)
+                  begin
+                    display(1,%date,' ',%string(%time,"XX:XX:XX"),' Get Directory: ',13,10)
+                    iStatus = %ftpdirectorylist(iConnection, hDir, sReturn, 'LIST', "*.*")
+                    display(1,%date,' ',%string(%time,"XX:XX:XX"),' ',%atrim(sreturn),13,10)
+
+                    if (iStatus < 300)
+                      begin
+
+                        for iCount from 1 thru %mem_proc(DM_GETSIZE, hDir) / ^size(filelist)
+                          begin
+
+                            if (%atrim(^m(strLongFileList[iCount].sstrFileName, hDir)) != %char(0))
+                              begin
+                                sFileName = %atrim(^m(strLongFileList[iCount].sstrFileName, hDir))
+                                LongFileList = ^m(strLongFileList[iCount], hDir)
+                                if (%instr(1, sFileName, ";"))
+                                  then
+                                  begin
+                                    display(1, LongFileList.strFileName, ' ', LongFileList.strSize, 13, 10)
+                                    display(1, %date,' ',%string(%time,"XX:XX:XX"),
+                                    &       ' Getting: ',%atrim(sFileName) + 
+                                    &       ' ' + LongFileList.strMonth + 
+                                    &       ' ' + LongFileList.strDay + 
+                                    &       ' ' + LongFileList.strTime + ' AS ' +
+                                    &       'c:\affiles\data\files\' + 
+                                    &       sFileName(1, %instr(1, %atrim(sFileName), ";") - 1),13,10)
+
+                                    iStatus = %ftpgetfileas(iConnection,'c:\affiles\data\' + 
+                                    &       sFileName(1, %instr(1, %atrim(sFileName), ";") - 1),
+                                    &       %atrim(sFileName),'ASCII',sreturn)
+                                  end
+                                  else
+                                  begin
+                                    display(1, LongFileList.strFileName, ' ', LongFileList.strSize, 13, 10)
+                                    display(1,%date,' ',%string(%time,"XX:XX:XX"),
+                                    &       ' Getting: ',%atrim(sFileName) + 
+                                    &       ' ' + LongFileList.strMonth + 
+                                    &       ' ' + LongFileList.strDay + 
+                                    &       ' ' + LongFileList.strTime + ' AS ' +
+                                    &       %atrim(sFileName),13,10)
+
+                                    iStatus = %ftpgetfileas(iConnection,'c:\affiles\data\' + %atrim(sFileName),
+                                    &       %atrim(sFileName),'ASCII',sreturn)
+                                  end
+                                display(1,%date,' ',%string(%time,"XX:XX:XX"),' ',%atrim(sreturn),13,10)
+                              end
+
+                          end
+                      end
+                  end
+              end
+            iStatus = %ftpClose(iConnection, sreturn)
+            display(1,%atrim(sreturn),13,10)
+          end
+
+        stop
+.end
